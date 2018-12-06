@@ -43,8 +43,8 @@ foreach y in overweight obese zbmi {
 	* time lag t-2
 	quietly eststo: areg `y' i.distFFORsn2 i.distBODsn2 i.distWSsn2 ///
 		i.distC6Psn2 $demo $house if $sample2, robust absorb(boroct2010) //time lag t-2
-	esttab using raw-tables\studentFE_time_lag.rtf, append b(4) se(4) nogaps ///
-		title("`y'-student-FE-time-lag")
+	esttab using raw-tables\studentFE_time_lag.rtf, append b(3) se(3) ///
+		starlevels(= 0.1 + 0.05 * 0.01) title("`y'-estimates") nogaps
 }
 .
 
@@ -53,10 +53,6 @@ foreach y in overweight obese zbmi {
 
 
 
-/*
-esttab using "supplementary_table4_may3.rtf", replace b(3) ci(3) ///
-	starlevels(= 0.1 + 0.05 * 0.01) title("table4 street network") nogaps
-*/
 	
 
 
