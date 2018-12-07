@@ -24,17 +24,34 @@ foreach var in FFOR BOD WS C6P {
 	by newid: gen dist`var'sn2 = dist`var'sn[_n-2] if year==year[_n-2]+2 //t-2
 }
 .
+label var distFFORsn1 "time lag 1 year"
+label var distFFORsn2 "time lag 2 years"
+
 * sanity check
 sort newid year
 quietly by newid: gen dup=cond(_N==1, 0, _n)
 bys newid: egen max=max(dup) //looks fine
 drop dup max
 
-* using student FE
+* compare summary stats
+forvalues i=1/2 {
+	foreach var in obese overweight female poor ethnic forborn sped lep boro {
+		tab `var' if $sample2 & year==2013 & !missing(distFFORsn`i')
+	}
+	sum zbmi grade age if $sample2 & year==2013 & !missing(distFFORsn`i')
+}
+.
+
+* regression and export result
 foreach y in overweight obese zbmi {
 	eststo clear
+	*current model
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
 		$house if $sample2, robust absorb(boroct2010) //current model
+	* cluster at home ct level
+	quietly eststo: reg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, vce(cluster boroct2010)
+	* using student FE
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
 		sped lep age i.graden i.year $house if $sample2, robust absorb(newid) //student fe
 	* time lag t-1
@@ -48,11 +65,17 @@ foreach y in overweight obese zbmi {
 }
 .
 
+*** addressing other comments from reviewers
+* how many home ct do students reside in?
+unique(boroct2010) if $sample2 
 
 
 
-
-
+areg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+	$house if $sample2, robust absorb(boroct2010) //robust
+areg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+	$house if $sample2, absorb(boroct2010) vce(cluster boroct2010) //clustered
+		
 	
 
 
