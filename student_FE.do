@@ -49,8 +49,8 @@ foreach y in overweight obese zbmi {
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
 		$house if $sample2, robust absorb(boroct2010) //current model
 	* cluster at home ct level
-	quietly eststo: reg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-		$house if $sample2, vce(cluster boroct2010)
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, absorb(boroct2010) vce(cluster boroct2010)
 	* using student FE
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
 		sped lep age i.graden i.year $house if $sample2, robust absorb(newid) //student fe
@@ -71,10 +71,6 @@ unique(boroct2010) if $sample2
 
 
 
-areg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-	$house if $sample2, robust absorb(boroct2010) //robust
-areg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-	$house if $sample2, absorb(boroct2010) vce(cluster boroct2010) //clustered
 		
 	
 
