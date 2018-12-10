@@ -20,12 +20,16 @@ global house publichousing fam1 coop fam2to4 fam5ormore condo mixeduse otherres 
 * generate lagged distance measurements, t-1 and t-2
 sort newid year
 foreach var in FFOR BOD WS C6P {
-	by newid: gen dist`var'sn1 = dist`var'sn[_n-1] if year==year[_n-1]+1 //t-1
-	by newid: gen dist`var'sn2 = dist`var'sn[_n-2] if year==year[_n-2]+2 //t-2
+	*by newid: gen dist`var'sn1 = dist`var'sn[_n-1] if year==year[_n-1]+1 //t-1
+	*by newid: gen dist`var'sn2 = dist`var'sn[_n-2] if year==year[_n-2]+2 //t-2
+	by newid: gen nearest`var'sn1 = nearest`var'sn[_n-1] if year==year[_n-1]+1 //t-1
+	by newid: gen nearest`var'sn2 = nearest`var'sn[_n-2] if year==year[_n-2]+2 //t-2
 }
 .
 label var distFFORsn1 "time lag 1 year"
 label var distFFORsn2 "time lag 2 years"
+label var nearestFFORsn1 "time lag 1 year"
+label var nearestFFORsn2 "time lag 2 yeas"
 
 * sanity check
 sort newid year
@@ -48,9 +52,9 @@ foreach y in overweight obese zbmi {
 	*current model
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
 		$house if $sample2, robust absorb(boroct2010) //current model
-	* cluster at home ct level
+	* cluster SE at student level
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-		$house if $sample2, absorb(boroct2010) vce(cluster boroct2010)
+		$house if $sample2, absorb(boroct2010) vce(cluster newid)
 	* using student FE
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
 		sped lep age i.graden i.year $house if $sample2, robust absorb(newid) //student fe
@@ -69,10 +73,14 @@ foreach y in overweight obese zbmi {
 * how many home ct do students reside in?
 unique(boroct2010) if $sample2 
 
+* correlation betwee current and previous food env
+corr distFFORsn distFFORsn1 distFFORsn2 if $sample2	
+tab distFFORsn distFFORsn1 if $sample2
 
-
-		
-	
+corr nearestFFORsn nearestFFORsn1 nearestFFORsn2 if $sample //negative corr?
+* check why the negative corr
+* did students change address
+* did food env change
 
 
 
