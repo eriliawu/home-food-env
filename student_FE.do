@@ -20,8 +20,8 @@ global house publichousing fam1 coop fam2to4 fam5ormore condo mixeduse otherres 
 * generate lagged distance measurements, t-1 and t-2
 sort newid year
 foreach var in FFOR BOD WS C6P {
-	*by newid: gen dist`var'sn1 = dist`var'sn[_n-1] if year==year[_n-1]+1 //t-1
-	*by newid: gen dist`var'sn2 = dist`var'sn[_n-2] if year==year[_n-2]+2 //t-2
+	by newid: gen dist`var'sn1 = dist`var'sn[_n-1] if year==year[_n-1]+1 //t-1
+	by newid: gen dist`var'sn2 = dist`var'sn[_n-2] if year==year[_n-2]+2 //t-2
 	by newid: gen nearest`var'sn1 = nearest`var'sn[_n-1] if year==year[_n-1]+1 //t-1
 	by newid: gen nearest`var'sn2 = nearest`var'sn[_n-2] if year==year[_n-2]+2 //t-2
 }
@@ -73,18 +73,45 @@ foreach y in overweight obese zbmi {
 * how many home ct do students reside in?
 unique(boroct2010) if $sample2 
 
-* correlation betwee current and previous food env
-corr distFFORsn distFFORsn1 distFFORsn2 if $sample2	
-tab distFFORsn distFFORsn1 if $sample2
-
-corr nearestFFORsn nearestFFORsn1 nearestFFORsn2 if $sample //negative corr?
 * check why the negative corr
 * did students change address
 * did food env change
+keep if $sample2 & !missing(nearestFFORsn)
+keep newid year x y *FFORsn *BODsn *WSsn *C6Psn 
+reshape wide x y *FFORsn *BODsn *WSsn *C6Psn, i(newid) j(year)
 
+foreach var in FFOR BOD WS C6P {
+	*pwcorr nearest`var'sn2009 nearest`var'sn2010 nearest`var'sn2011 ///
+		nearest`var'sn2012 nearest`var'sn2013
+	*pwcorr dist`var'sn2009 dist`var'sn2010 dist`var'sn2011 dist`var'sn2012 dist`var'sn2013
+}
+. //2009, 2010, 2012 and 2013 are highly correlated, but not 2011
 
+pwcorr x2009 x2010 x2011 x2012 x2013
 
+compress
+save "S:\Personal\hw1220\food environment paper 2\data\dist_street_network.dta", replace
+sum nearestFFORsn* nearestBODsn* nearestWSsn* nearestC6Psn*
 
+* check if euclidean dist also have abnormal data in 2011
+{
+clear all
+set more off
+cd "S:\Personal\hw1220\food environment paper 2"
+use "food_environment_2009-2013.dta", clear
+global sample home==0 & !missing(grade) & nearestFFOR<=2640
+keep if $sample & !missing(nearestFFOR)
+keep newid year x y nearestFFOR nearestBOD nearestWS nearestC6P
+reshape wide x y nearestFFOR nearestBOD nearestWS nearestC6P, i(newid) j(year)
+foreach var in FFOR BOD WS C6P {
+	pwcorr nearest`var'2009 nearest`var'2010 nearest`var'2011 ///
+		nearest`var'2012 nearest`var'2013
+}
+. //all years are correlated
+compress
+save data\dist_euclidean.dta, replace
+}
+.
 
 
 
