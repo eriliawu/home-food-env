@@ -88,6 +88,7 @@ foreach var in FFOR BOD WS C6P {
 . //2009, 2010, 2012 and 2013 are highly correlated, but not 2011
 
 pwcorr x2009 x2010 x2011 x2012 x2013
+pwcorr y2009 y2010 y2011 y2012 y2013
 
 compress
 save "S:\Personal\hw1220\food environment paper 2\data\dist_street_network.dta", replace
