@@ -10,8 +10,8 @@ cd "C:\Users\wue04\Box Sync\home-food-env"
 
 *** analytics
 global sample !missing(x) & !missing(age) & !missing(grade) & !missing(bds) & ///
-!missing(ethnic) & !missing(x_sch) & home>2640 & sch>2640 & district<=32 & ///
-eth!=6 & !missing(boro) & !missing(boro_sch) & !missing(native) //789520
+	!missing(ethnic) & !missing(x_sch) & home>2640 & sch>2640 & district<=32 & ///
+	eth!=6 & !missing(boro) & !missing(boro_sch) & !missing(native) //789520
 
 rename FF FFOR
 foreach var in FFOR BOD C6P WS {
@@ -21,6 +21,21 @@ foreach var in FFOR BOD C6P WS {
 	label var n`var'1320_sch "num of `var' in 1320 ft from school"
 }
 .
+
+* create race and poverty intereaction
+gen poor_race=1 if poor==0 & eth==5
+replace poor_race=2 if poor==0 & eth==4
+replace poor_race=3 if poor==0 & eth==3
+replace poor_race=4 if poor==0 & eth==2
+replace poor_race=5 if poor==1 & eth==5
+replace poor_race=6 if poor==1 & eth==4
+replace poor_race=7 if poor==1 & eth==3
+replace poor_race=8 if poor==1 & eth==2
+
+label var poor_race "interaction race and poverty"
+label define interaction 1 "NP white" 2 "NP black" 3 "NP hisp" 4 "NP asian" ///
+	5 "poor white" 6 "poor black" 7 "poor hisp" 8 "poor asian", replace
+label values poor_race ineraction
 
 * create flow diagram
 count //1129918
@@ -43,6 +58,7 @@ count if !missing(x) & !missing(age) & !missing(grade) & !missing(bds) & ///
 eth!=6 & !missing(boro) & !missing(boro_sch) & !missing(native) //789520
 
 *** table 1 socio-demo
+{
 tab eth if $sample
 tab poor if $sample
 
@@ -80,11 +96,11 @@ foreach poor in 1 0 {
 	tab boro if $sample & poor==`poor'
 }
 .
+}.
 
 * table 2
 * distance to nearest food outlet
 sum BOD* FF* WS* C6P* if $sample, d
-
 forvalues poor=0/1 {
 	forvalues race=2/5 {
 		sum BOD* FF* WS* C6P* if $sample & eth==`race' & poor==`poor'
@@ -92,9 +108,31 @@ forvalues poor=0/1 {
 }
 .
 
+* make histograms to see why mean and median are different
+{
+hist nBOD1320 if $sample, bin(127) ///
+	xtitle("Number of corner stores") title("Corner store") ///
+	xlab(`=0' "0" `=50' "50" `=127' "max" `=25' "25" `=15.65' "mean", labsize(tiny))
+graph save figures\histogram_corner_store.gph, replace
+hist nFFOR1320 if $sample, bin(242) ///
+	xtitle("Number of fast food restaurants") title("Fast food") ///
+	xlab(`=0' "0" `=50' "50" `=100' "100" `=242' "max" `=17.31' "mean", labsize(tiny))
+graph save figures\histogram_fast_food.gph, replace
+hist nWS1320 if $sample, bin(220) ///
+	xtitle("Number of wait service restaurants") title("Wait service") ///
+	xlab(`=0' "0" `=50' "50" `=150' "150" `=50' "50" `=150' "150" `=220' "max" `=8.02' "mean", labsize(tiny))
+graph save figures\histogram_wait_service.gph, replace
+hist nC6P1320 if $sample, bin(10) ///
+	xtitle("Number of supermarkets") title("Supermarket") ///
+	xlab(`=0' "0" `=2' "2" `=5' "5" `=10' "max" `=1.19' "mean", labsize(tiny))
+graph save figures\histogram_supermarket.gph, replace
+}
+.
+
+
 eststo clear
-estpost tabstat BOD FFOR WS C6P if $sample, by(eth) stats(mean sd) column(statistics)
-esttab using test.rtf, cells("mean(fmt(%12.0f)) sd(fmt(%12.0f))") replace
+estpost tabstat BOD FFOR WS C6P if $sample, by(eth) stats(sd) column(statistics)
+esttab using test.rtf, cells("sd(fmt(%12.0f))") replace
 
 * test statistical significance between diff races
 * home
