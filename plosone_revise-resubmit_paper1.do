@@ -23,6 +23,8 @@ foreach var in FFOR BOD C6P WS {
 .
 
 * create race and poverty intereaction
+* create school levels
+{
 gen poor_race=1 if poor==0 & eth==5
 replace poor_race=2 if poor==0 & eth==4
 replace poor_race=3 if poor==0 & eth==3
@@ -36,6 +38,17 @@ label var poor_race "interaction race and poverty"
 label define interaction 1 "NP white" 2 "NP black" 3 "NP hisp" 4 "NP asian" ///
 	5 "poor white" 6 "poor black" 7 "poor hisp" 8 "poor asian", replace
 label values poor_race ineraction
+
+gen level=1 if grade<=5 & grade>=0
+replace level=2 if grade<=8 & grade>=6
+replace level=3 if grade<=12 & grade>=9
+
+label var level "school level"
+label define level 1 "k-5" 2 "6-8" 3 "9-12"
+label values level level
+tab grade level
+}
+.
 
 * create flow diagram
 count //1129918
@@ -129,11 +142,6 @@ graph save figures\histogram_supermarket.gph, replace
 }
 .
 
-
-eststo clear
-estpost tabstat BOD FFOR WS C6P if $sample, by(eth) stats(sd) column(statistics)
-esttab using test.rtf, cells("sd(fmt(%12.0f))") replace
-
 * test statistical significance between diff races
 * home
 foreach var in BOD FF WS C6P {
@@ -167,8 +175,52 @@ foreach dist in 1320 528 2640 {
 }
 .
 
+* R&R  additional work
+* add SD to tables
+* tabls s1
+estpost tabstat BOD BOD_sch FFOR FFOR_sch WS WS_sch C6P C6P_sch if $sample, ///
+	by(poor_race) stats(sd) column(statistics)
+esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+	cells("sd(fmt(%12.0f))") replace title("s1")
+estpost tabstat nBOD1320 nBOD1320_sch nFFOR1320 nFFOR1320_sch nWS1320 ///
+	nWS1320_sch nC6P1320 nC6P1320_sch if $sample, ///
+	by(poor_race) stats(sd) column(statistics)
+esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+	cells("sd(fmt(%12.0f))") append title("s2")
+estpost tabstat nBOD528 nBOD528_sch nFFOR528 nFFOR528_sch nWS528 ///
+	nWS528_sch nC6P528 nC6P528_sch if $sample, ///
+	by(poor_race) stats(sd) column(statistics)
+esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+	cells("sd(fmt(%12.0f))") append title("s3")
+estpost tabstat nBOD2640 nBOD2640_sch nFFOR2640 nFFOR2640_sch nWS2640 ///
+	nWS2640_sch nC6P2640 nC6P2640_sch if $sample, ///
+	by(poor_race) stats(sd) column(statistics)
+esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+	cells("sd(fmt(%12.0f))") append title("s4")
 
-
+* breakdown by grade
+forvalues i=1/3 {
+	estpost tabstat BOD BOD_sch FFOR FFOR_sch WS WS_sch C6P C6P_sch if $sample & level==`i', ///
+		by(poor_race) stats(sd) column(statistics)
+	esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+		cells("sd(fmt(%12.0f))") append title("mean-dist-level-`i'")
+	estpost tabstat nBOD1320 nBOD1320_sch nFFOR1320 nFFOR1320_sch nWS1320 ///
+		nWS1320_sch nC6P1320 nC6P1320_sch if $sample & level==`i', ///
+		by(poor_race) stats(sd) column(statistics)
+	esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+		cells("sd(fmt(%12.0f))") append title("count0.25-level-`i'")
+	estpost tabstat nBOD528 nBOD528_sch nFFOR528 nFFOR528_sch nWS528 ///
+		nWS528_sch nC6P528 nC6P528_sch if $sample & level==`i', ///
+		by(poor_race) stats(sd) column(statistics)
+	esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+		cells("sd(fmt(%12.0f))") append title("count0.1-level-`i'")
+	estpost tabstat nBOD2640 nBOD2640_sch nFFOR2640 nFFOR2640_sch nWS2640 ///
+		nWS2640_sch nC6P2640 nC6P2640_sch if $sample & level==`i', ///
+		by(poor_race) stats(sd) column(statistics)
+	esttab using raw-tables\table1-7_with_sd_20190109.rtf, ///
+		cells("sd(fmt(%12.0f))") append title("count0.5-level-`i'")
+}
+.
 
 /*
 * compare school level resutls with old model (no clustered SE)
