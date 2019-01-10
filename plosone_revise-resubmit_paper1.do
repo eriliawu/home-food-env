@@ -292,8 +292,28 @@ foreach x in poor ethnic2 {
 
 *pwmean FFOR_sch, over(i.poor_race) mcompare(bon) effects //with bonferroni correction
 * joint f tests
+* for both home and school level measurements
 tab poor_race if $sample, gen(poor_race)
-foreach var in BOD FFOR WS C6P {
+
+foreach var in BOD FFOR WS C6P { //home level
+	reg `var' poor_race1 poor_race2 poor_race3 poor_race4 ///
+		poor_race5 poor_race6 poor_race7 poor_race8
+	test poor_race1 poor_race2 poor_race3 poor_race4 ///
+		poor_race5 poor_race6 poor_race7 poor_race8
+}
+.
+
+foreach dist in 1320 528 2640 { //home level
+	foreach var in BOD FFOR WS C6P {
+		reg n`var'`dist' poor_race1 poor_race2 poor_race3 poor_race4 ///
+			poor_race5 poor_race6 poor_race7 poor_race8
+		test poor_race1 poor_race2 poor_race3 poor_race4 ///
+			poor_race5 poor_race6 poor_race7 poor_race8
+	}
+}
+.
+
+foreach var in BOD FFOR WS C6P { //school level
 	reg `var'_sch poor_race1 poor_race2 poor_race3 poor_race4 ///
 		poor_race5 poor_race6 poor_race7 poor_race8, cluster(bds)
 	test poor_race1 poor_race2 poor_race3 poor_race4 ///
@@ -301,9 +321,9 @@ foreach var in BOD FFOR WS C6P {
 }
 .
 
-foreach dist in 1320 528 2640 {
+foreach dist in 1320  { //school level
 	foreach var in BOD FFOR WS C6P {
-		reg n`var'`dist' poor_race1 poor_race2 poor_race3 poor_race4 ///
+		reg n`var'`dist'_sch poor_race1 poor_race2 poor_race3 poor_race4 ///
 			poor_race5 poor_race6 poor_race7 poor_race8, cluster(bds)
 		test poor_race1 poor_race2 poor_race3 poor_race4 ///
 			poor_race5 poor_race6 poor_race7 poor_race8
