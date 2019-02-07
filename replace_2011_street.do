@@ -41,18 +41,45 @@ compress
 save replace2011.dta, replace
 erase replace2011_id.dta
 
+* clean up 2012 supermarket data
+import delimited closestC6P_2012map.csv, clear
+keep incidentid total_length
+rename inci id
+rename total C6P
+gen year=2012
+sum id
+compress
+save C6P2012_temp.dta, replace
+
+* link id to x-y
+import delimited "H:\Personal\food environment paper 1\students' addresses\unique_xy12.csv", clear
+tab year
+sum id
+drop if missing(x)
+merge 1:1 id using C6P2012_temp.dta
+drop if _merge==1
+drop id _merge
+compress
+save C6P2012.dta, replace
+erase C6P2012_temp.dta
+
 * link to students
 merge 1:m x y year using "H:\Personal\food_environment_2009-2013.dta"
-
 drop if _mer==1
+replace nearestC6Psn=C6P if !missing(C6P) & year==2012 & _merge==3
+drop _merge C6P
+
+merge m:1 x y year using replace2011.dta
+drop if _mer==2
 foreach var in FFOR BOD WS C6P {
 	replace nearest`var'sn=`var' if !missing(`var') & year==2011 & _merge==3
 }
 .
 drop FFOR C6P WS BOD  _merge
 compress
-*save "H:\Personal\food_environment_2009-2013_replace.dta"
+save "H:\Personal\food_environment_2009-2013_replace.dta", replace
 erase replace2011.dta
+erase C6P2012.dta
 
 global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
 keep if $sample2 & !missing(nearestFFORsn)
@@ -70,6 +97,8 @@ foreach var in FFOR BOD WS C6P {
 ********************************************************************************
 *** analytical
 * re-run regressions
+use "H:\Personal\food_environment_2009-2013_replace.dta", clear
+{
 * define sample, covariates
 global sample home==0 & !missing(grade) & nearestFFOR<=2640
 global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
@@ -114,6 +143,11 @@ quietly by newid: gen dup=cond(_N==1, 0, _n)
 bys newid: egen max=max(dup) //looks fine
 drop dup max
 
+order newid year bdsnew x y
+compress
+save "H:\Personal\food_environment_2009-2013_replace.dta", replace
+
+cd "C:\Users\wue04\Box Sync\home-food-env"
 * compare summary stats
 forvalues i=1/2 {
 	foreach var in obese overweight female poor ethnic forborn sped lep boro {
@@ -126,29 +160,26 @@ forvalues i=1/2 {
 * regression and export result
 foreach y in overweight obese zbmi {
 	eststo clear
-	*current model
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
 		$house if $sample2, robust absorb(boroct2010) //current model
-	* cluster SE at student level
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-		$house if $sample2, absorb(boroct2010) vce(cluster newid)
-	* using student FE
+		$house if $sample2, absorb(boroct2010) vce(cluster newid) //clustered SE at student level
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
 		sped lep age i.graden i.year $house if $sample2, robust absorb(newid) //student fe
-	* time lag t-1
 	quietly eststo: areg `y' i.distFFORsn1 i.distBODsn1 i.distWSsn1 ///
 		i.distC6Psn1 $demo $house if $sample2, robust absorb(boroct2010) //time lag t-1
-	* time lag t-2
 	quietly eststo: areg `y' i.distFFORsn2 i.distBODsn2 i.distWSsn2 ///
 		i.distC6Psn2 $demo $house if $sample2, robust absorb(boroct2010) //time lag t-2
-	esttab using raw-tables\studentFE_time_lag.rtf, append b(3) se(3) ///
+	esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
 		starlevels(= 0.1 + 0.05 * 0.01) title("`y'-estimates") nogaps
 }
 .
 
 *** addressing other comments from reviewers
 * how many home ct do students reside in?
-unique(boroct2010) if $sample2 
+unique(boroct2010) if $sample2
+}
+.
 
 
 
