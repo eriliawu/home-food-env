@@ -80,17 +80,6 @@ compress
 save "H:\Personal\food_environment_2009-2013_replace.dta", replace
 erase replace2011.dta
 erase C6P2012.dta
-
-global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
-keep if $sample2 & !missing(nearestFFORsn)
-keep newid year x y *FFORsn *BODsn *WSsn *C6Psn 
-reshape wide x y *FFORsn *BODsn *WSsn *C6Psn, i(newid) j(year)
-
-foreach var in FFOR BOD WS C6P {
-	pwcorr nearest`var'sn2009 nearest`var'sn2010 nearest`var'sn2011 ///
-		nearest`var'sn2012 nearest`var'sn2013
-}
-.
 }
 .
 
@@ -148,6 +137,8 @@ compress
 save "H:\Personal\food_environment_2009-2013_replace.dta", replace
 
 cd "C:\Users\wue04\Box Sync\home-food-env"
+
+global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
 * compare summary stats
 forvalues i=1/2 {
 	foreach var in obese overweight female poor ethnic forborn sped lep boro {
@@ -157,7 +148,8 @@ forvalues i=1/2 {
 }
 .
 
-* regression and export result
+*** regression and export result
+* main model
 foreach y in overweight obese zbmi {
 	eststo clear
 	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
@@ -175,9 +167,118 @@ foreach y in overweight obese zbmi {
 }
 .
 
+*** supp analyses
+* table s7: by grade
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2 & level==1, robust absorb(boroct2010) 
+}
+.
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2 & (level==2|level==3), robust absorb(boroct2010) 
+}
+.
+esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("s7-by-grade") nogaps
+
+* s8: by boro
+forvalues i=1/5 {
+	eststo clear
+	foreach y in overweight obese zbmi {
+		quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+			$house if $sample2 & boro==`i', robust absorb(boroct2010)
+	}
+	esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+		starlevels(= 0.1 + 0.05 * 0.01) title("s8-boro`i'") nogaps
+}
+.
+
+* s9: students not living in commercial strips
+egen commercial_10tile=xtile(commercial2016) if $sample2, by(year) nq(10)
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2 & commercial_10tile<=9, robust absorb(boroct2010)
+}
+.
+esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("s9-commercial-strip") nogaps
+
+* s11: alternative reference group in supermarkets
+* set 0-0.05 miles as ref group
+gen distC6Psn_alt = 1
+replace distC6Psn_alt = 2 if distC6Psn==3
+replace distC6Psn_alt = 3 if distC6Psn==4
+replace distC6Psn_alt = 4 if distC6Psn==5
+replace distC6Psn_alt = 5 if distC6Psn==6
+replace distC6Psn_alt = 6 if distC6Psn==7
+label var distC6Psn_alt "ref group 0-0.05 miles"
+
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn_alt $demo ///
+		$house if $sample2, robust absorb(boroct2010)
+}
+.
+esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("s11-alternative-SUP-ref-group") nogaps
+
+*s12 without CT FE
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly eststo: reg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
+			$demo $house if $sample2, robust
+}
+.
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
+			$demo $house if $sample2, robust absorb(boroct2010)
+}
+.
+esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("s12-no-CT-FE") nogaps
+
+* poor vs. non-poor
+eststo clear
+foreach i in 0 1 {
+	foreach y in overweight obese zbmi {
+		quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn ///
+			$demo $house if $sample2 & poor==`i', robust absorb(boroct2010)
+	}
+}
+.
+esttab using raw-tables\studentFE_timeLag20190207.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("s13-poo-vs-non-poor") nogaps
+
+*sample size for different models
+count if $sample2 //3,507,542
+count if $sample2 & level==1 //1,758,305
+count if $sample2 & (level==2|level==3) //1,749,237
+forvalues i=1/5 {
+	count if $sample2 & boro==`i'
+}
+. //404,198; 731,271; 1,169,775; 992,331; 209,963
+count if $sample2 & commercial_10tile<=9 //3,156,825
+count if $sample2 & poor==0 //452,316
+count if $sample2 & poor==1 //3,055,226
+
+
 *** addressing other comments from reviewers
 * how many home ct do students reside in?
 unique(boroct2010) if $sample2
+
+* corr in food measurements between diff years
+keep if $sample2 & !missing(nearestFFORsn)
+keep newid year x y *FFORsn *BODsn *WSsn *C6Psn 
+reshape wide x y *FFORsn *BODsn *WSsn *C6Psn, i(newid) j(year)
+
+foreach var in FFOR BOD WS C6P {
+	pwcorr nearest`var'sn2009 nearest`var'sn2010 nearest`var'sn2011 ///
+		nearest`var'sn2012 nearest`var'sn2013
+}
+.
 }
 .
 
