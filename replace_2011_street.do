@@ -89,7 +89,7 @@ erase C6P2012.dta
 use "H:\Personal\food_environment_2009-2013_replace.dta", clear
 {
 * define sample, covariates
-global sample home==0 & !missing(grade) & nearestFFOR<=2640
+*global sample home==0 & !missing(grade) & nearestFFOR<=2640
 global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
 
 global demo b5.ethnic2 female poor forborn sped lep age i.graden i.year
@@ -139,12 +139,20 @@ save "H:\Personal\food_environment_2009-2013_replace.dta", replace
 cd "C:\Users\wue04\Box Sync\home-food-env"
 
 global sample2 home==0 & !missing(grade) & nearestFFORsn<=2640
-* compare summary stats
+* compare summary stats, AY 2013
 forvalues i=1/2 {
 	foreach var in obese overweight female poor ethnic forborn sped lep boro {
 		tab `var' if $sample2 & year==2013 & !missing(distFFORsn`i')
 	}
 	sum zbmi grade age if $sample2 & year==2013 & !missing(distFFORsn`i')
+}
+.
+
+forvalues i=2009/2012 {
+	foreach var in obese overweight female poor ethnic forborn sped lep boro {
+		tab `var' if $sample2 & year==`i'
+	}
+	sum zbmi grade age if $sample2 & year==`i'
 }
 .
 
