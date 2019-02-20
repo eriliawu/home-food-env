@@ -272,6 +272,16 @@ count if $sample2 & commercial_10tile<=9 //3,156,825
 count if $sample2 & poor==0 //452,316
 count if $sample2 & poor==1 //3,055,226
 
+*** make figures
+* predicted likelihood of obesity, being overweight and zBMI score
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, robust absorb(boroct2010)
+	quietly eststo: margins i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn, post
+}
+.
+esttab using likelihood_figs1-4.rtf, append b(5) se(5) title("for-figures1-4") nogaps
 
 *** addressing other comments from reviewers
 * how many home ct do students reside in?
