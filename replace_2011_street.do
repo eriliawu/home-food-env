@@ -271,6 +271,11 @@ forvalues i=1/5 {
 count if $sample2 & commercial_10tile<=9 //3,156,825
 count if $sample2 & poor==0 //452,316
 count if $sample2 & poor==1 //3,055,226
+count if $sample2 & !missing(distFFORsn1) & !missing(distBODsn1) & ///
+	!missing(distWSsn1) & !missing(distC6Psn1) //2,233,291
+count if $sample2 & !missing(distFFORsn2) & !missing(distBODsn2) & ///
+	!missing(distWSsn2) & !missing(distC6Psn2) //1,332,308
+
 
 *** make figures
 * predicted likelihood of obesity, being overweight and zBMI score
@@ -281,7 +286,7 @@ foreach y in overweight obese zbmi {
 	quietly eststo: margins i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn, post
 }
 .
-esttab using likelihood_figs1-4.rtf, append b(5) se(5) title("for-figures1-4") nogaps
+esttab using raw-tables\likelihood_figs1-4.rtf, append b(5) se(5) title("for-figures1-4") nogaps
 
 *** addressing other comments from reviewers
 * how many home ct do students reside in?
