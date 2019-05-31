@@ -30,6 +30,19 @@ foreach y in overweight obese zbmi {
 esttab using raw-tables\rr2_20190530.rtf.rtf, append b(3) se(3) ///
 	starlevels(= 0.1 + 0.05 * 0.01) title("`y'-estimates") nogaps
 
+* stratify by year
+foreach y in overweight obese zbmi {
+	eststo clear
+	forvalues i=2009/2013 {
+		quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+			$house if $sample2 & year==`i', robust absorb(boroct2010)
+	}
+	esttab using raw-tables\rr2_20190530.rtf.rtf, append b(3) se(3) ///
+		starlevels(= 0.1 + 0.05 * 0.01) title("`y'-stratify-by-year") nogaps
+}
+.
+
+
 * avg number of outlets in each distance
 
 * distribution of stores, by census tract
