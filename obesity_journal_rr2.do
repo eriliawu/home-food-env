@@ -42,10 +42,18 @@ foreach y in overweight obese zbmi {
 }
 .
 
-
-* avg number of outlets in each distance
-
-* distribution of stores, by census tract
+* logit model
+* main model and clustered SE at student level
+eststo clear
+foreach y in overweight obese zbmi {
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, robust absorb(boroct2010) //current model
+	quietly eststo: areg `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, vce(cluster newid) absorb(boroct2010) //with clustered SE, student
+}
+.
+esttab using raw-tables\rr2_20190530.rtf.rtf, append b(3) se(3) ///
+	starlevels(= 0.1 + 0.05 * 0.01) title("logit-estimates") nogaps
 
 
 
