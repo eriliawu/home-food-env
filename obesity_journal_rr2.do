@@ -53,9 +53,9 @@ foreach y in overweight obese zbmi {
 eststo clear
 foreach y in overweight obese zbmi {
 	quietly eststo: logit `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-		$house i.boroct2010 if $sample2, or vce(robust) //current model
+		$house i.boroct2010_num if $sample2, or vce(robust) //current model
 	quietly eststo: logit `y' i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
-		$house i.boroct2010 if $sample2, or vce(cluster newid) //with clustered SE, student
+		$house i.boroct2010_num if $sample2, or vce(cluster newid) //with clustered SE, student
 }
 .
 esttab using raw-tables\rr2_20190530.rtf, append eform b(3) se(3) ///
@@ -80,7 +80,7 @@ foreach var in FFOR BOD WS C6P {
 destring boroct2010, gen(boroct2010_num)
 
 eststo clear
-clogit obese i.distFFORsn i.distBODsn i.year if $sample2, or vce(robust) group(boroct2010)
+xtlogit obese i.distFFORsn i.year if $sample2, or fe
 esttab using test.rtf, replace eform b(3) se(3) ///
 	keep(*.distFFORsn *.distBODsn)
 
