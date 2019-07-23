@@ -62,9 +62,39 @@ esttab using raw-tables\rr2_20190530.rtf, append eform b(3) se(3) ///
 	starlevels(= 0.1 + 0.05 * 0.01) title("logit-estimates") nogaps ///
 	keep(*.distFFORsn *.distBODsn *.distWSsn *.distC6Psn)
 
+* check residuals
+quietly: areg overweight i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, robust absorb(boroct2010) //current model
+predict y_hat, xb
+predict residual, residuals
+tabstat y_hat, by(distFFORsn)
 
+scatter res y_hat, title("Residual Plot (outcome: overweight)") ///
+	xtitle("Predicted values", size(vsmall)) ///
+	ytitle("Residuals", size(vsmall)) ///
+	xlabel(`=0' "0" `=0.1' "0.1" `=0.2' "0.2" `=0.3' "0.3" `=0.4' "0.4" ///
+		`=0.5' "0.5" `=0.6' "0.6", labsize(vsmall)) ///
+	ylabel(`=-0.5' "-0.5" `=0' "0" `=0.5' "0.5" `=1' "1", ///
+		labsize(vsmall) glwidth(vthin) glcolor(black%20)) ///
+	msize(vsmall) mlcolor(black) mfcolor(white) ///
+	graphregion(color(white)) bgcolor(white)
+graph save figures\residual-overweight.gph, replace
 
-
+drop y_hat residual
+quietly: areg obese i.distFFORsn i.distBODsn i.distWSsn i.distC6Psn $demo ///
+		$house if $sample2, robust absorb(boroct2010) //current model
+predict y_hat, xb
+predict residual, residuals
+scatter residual y_hat, title("Residual Plot (outcome: obese)") ///
+	xtitle("Predicted values", size(vsmall)) ///
+	ytitle("Residuals", size(vsmall)) ///
+	xlabel(`=-0.1' "-0.1" `=0' "0" `=0.1' "0.1" `=0.2' "0.2" `=0.3' "0.3" ///
+		`=0.4' "0.4", labsize(vsmall)) ///
+	ylabel(`=-0.5' "-0.5" `=0' "0" `=0.5' "0.5" `=1' "1", ///
+		labsize(vsmall) glwidth(vthin) glcolor(black%20)) ///
+	msize(vsmall) mlcolor(black) mfcolor(white) ///
+	graphregion(color(white)) bgcolor(white)
+graph save figures\residual-obese.gph, replace
 
 * corr in food measurements between diff years
 keep if $sample2 & !missing(nearestFFORsn)
