@@ -4,4 +4,5 @@ raw-tables
 figures
 tables
 test*
+.ipynb_checkpoints/
 
