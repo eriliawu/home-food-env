@@ -8,7 +8,7 @@ Publications
 
 | Reference | Title | Link |
 | :-------  | :---- | :---- |
-| [![DOI:10.1371/ournal.pone.0217341](https://zenodo.org/badge/DOI/10.1371/ournal.pone.0217341.svg)]( https://doi.org/10.1371/journal.pone.0217341) | *Disparities in food access around homes and schools for New York City children* | [Link][ref1]|
+| [![DOI:10.1371/journal.pone.0217341](https://zenodo.org/badge/DOI/10.1371/ournal.pone.0217341.svg)]( https://doi.org/10.1371/journal.pone.0217341) | *Disparities in food access around homes and schools for New York City children* | [Link][ref1]|
 | [![DOI:10.1002/oby.22663](https://zenodo.org/badge/DOI/10.1002/oby.22663.svg)]( https://doi.org/10.1002/oby.22663) | *EChildhood Obesity and the Food Environment: A Population‐Based Sample of Public School Children in New York City* | [Link][ref2] |
 
 [ref1]: https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0217341
